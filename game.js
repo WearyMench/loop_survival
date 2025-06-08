@@ -9,9 +9,10 @@ const BASE_ENEMY_SPEED = 1.5;
 const particles = [];
 let shakeDuration = 0;
 let shakeMagnitude = 5;
-
-
-
+const explosionSound = new Audio("sounds/explosion.mp3");
+const backgroundMusic = new Audio("sounds/music.mp3");
+backgroundMusic.loop = true;
+backgroundMusic.volume = 0.5; // puedes ajustar el volumen si quieres
 
 // ===================
 // JUGADOR
@@ -95,7 +96,6 @@ function clear() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
-
 function drawPlayer() {
   ctx.fillStyle = player.color;
   ctx.fillRect(player.x, player.y, player.size, player.size);
@@ -125,6 +125,9 @@ function checkCollisions() {
 function gameOver() {
   isGameOver = true;
   createExplosion(player.x, player.y, player.color);
+  explosionSound.currentTime = 0;
+  explosionSound.play();
+  backgroundMusic.pause();
   shakeDuration = 20;
   player.color = "black";
   setTimeout(() => {
@@ -146,7 +149,11 @@ function drawStartScreen() {
   ctx.textAlign = "center";
   ctx.fillText("Loop Survival", canvas.width / 2, canvas.height / 2 - 20);
   ctx.font = "20px Arial";
-  ctx.fillText("Presiona ESPACIO para comenzar", canvas.width / 2, canvas.height / 2 + 20);
+  ctx.fillText(
+    "Presiona ESPACIO para comenzar",
+    canvas.width / 2,
+    canvas.height / 2 + 20
+  );
 }
 
 function drawGameOverScreen() {
@@ -155,8 +162,16 @@ function drawGameOverScreen() {
   ctx.textAlign = "center";
   ctx.fillText("¡Has perdido!", canvas.width / 2, canvas.height / 2 - 30);
   ctx.font = "20px Arial";
-  ctx.fillText(`Sobreviviste ${score} segundos`, canvas.width / 2, canvas.height / 2);
-  ctx.fillText("Presiona ESPACIO para reiniciar", canvas.width / 2, canvas.height / 2 + 30);
+  ctx.fillText(
+    `Sobreviviste ${score} segundos`,
+    canvas.width / 2,
+    canvas.height / 2
+  );
+  ctx.fillText(
+    "Presiona ESPACIO para reiniciar",
+    canvas.width / 2,
+    canvas.height / 2 + 30
+  );
 }
 
 function resetGame() {
@@ -183,7 +198,7 @@ function createExplosion(x, y, color) {
       color: color,
       dx: (Math.random() - 0.5) * 5,
       dy: (Math.random() - 0.5) * 5,
-      alpha: 1
+      alpha: 1,
     });
   }
 }
@@ -201,7 +216,7 @@ function updateParticles() {
 }
 
 function drawParticles() {
-  particles.forEach(p => {
+  particles.forEach((p) => {
     ctx.save();
     ctx.globalAlpha = p.alpha;
     ctx.fillStyle = p.color;
@@ -257,7 +272,6 @@ function update(timestamp) {
   requestAnimationFrame(update);
 }
 
-
 // ===================
 // CONTROLES
 // ===================
@@ -308,11 +322,22 @@ document.addEventListener("keydown", (e) => {
   if (e.code === "Space") {
     if (gameState === "start") {
       gameState = "playing";
+      backgroundMusic.currentTime = 0;
+      backgroundMusic.play();
       requestAnimationFrame(update);
     } else if (gameState === "gameover") {
       resetGame();
       gameState = "playing";
+      backgroundMusic.currentTime = 0;
+      backgroundMusic.play();
       requestAnimationFrame(update);
+    }
+  }
+  if (e.code === "KeyM") {
+    if (backgroundMusic.paused) {
+      backgroundMusic.play();
+    } else {
+      backgroundMusic.pause();
     }
   }
 });
