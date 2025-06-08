@@ -6,6 +6,11 @@ let score = 0;
 let gameState = "start"; // puede ser "start", "playing", "gameover"
 const BASE_PLAYER_SPEED = 3;
 const BASE_ENEMY_SPEED = 1.5;
+const particles = [];
+let shakeDuration = 0;
+let shakeMagnitude = 5;
+
+
 
 
 // ===================
@@ -79,8 +84,17 @@ function drawEnemies() {
 // UTILIDADES
 // ===================
 function clear() {
+  if (shakeDuration > 0) {
+    const dx = (Math.random() - 0.5) * shakeMagnitude;
+    const dy = (Math.random() - 0.5) * shakeMagnitude;
+    ctx.setTransform(1, 0, 0, 1, dx, dy);
+    shakeDuration--;
+  } else {
+    ctx.setTransform(1, 0, 0, 1, 0, 0); // reset transform
+  }
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
+
 
 function drawPlayer() {
   ctx.fillStyle = player.color;
@@ -110,7 +124,13 @@ function checkCollisions() {
 
 function gameOver() {
   isGameOver = true;
-  gameState = "gameover";
+  createExplosion(player.x, player.y, player.color);
+  shakeDuration = 20;
+  player.color = "black";
+  setTimeout(() => {
+    gameState = "gameover";
+    drawGameOverScreen();
+  }, 100);
 }
 
 function drawScore() {
@@ -145,7 +165,7 @@ function resetGame() {
   player.dx = 0;
   player.dy = 0;
   player.speed = BASE_PLAYER_SPEED;
-
+  player.color = "lime";
   enemies.length = 0;
   isGameOver = false;
   startTime = 0;
@@ -154,6 +174,43 @@ function resetGame() {
   lastSpawnTime = 0;
 }
 
+function createExplosion(x, y, color) {
+  for (let i = 0; i < 20; i++) {
+    particles.push({
+      x: x + player.size / 2,
+      y: y + player.size / 2,
+      radius: Math.random() * 4 + 2,
+      color: color,
+      dx: (Math.random() - 0.5) * 5,
+      dy: (Math.random() - 0.5) * 5,
+      alpha: 1
+    });
+  }
+}
+
+function updateParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.dx;
+    p.y += p.dy;
+    p.alpha -= 0.02;
+    if (p.alpha <= 0) {
+      particles.splice(i, 1);
+    }
+  }
+}
+
+function drawParticles() {
+  particles.forEach(p => {
+    ctx.save();
+    ctx.globalAlpha = p.alpha;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  });
+}
 
 // ===================
 // GAME LOOP
@@ -193,6 +250,9 @@ function update(timestamp) {
   if (score > 0 && score % 10 === 0 && spawnInterval > 500) {
     spawnInterval -= 5;
   }
+
+  updateParticles();
+  drawParticles();
 
   requestAnimationFrame(update);
 }
