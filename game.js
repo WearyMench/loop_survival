@@ -195,8 +195,8 @@ function drawScore() {
   ctx.fillStyle = "white";
   ctx.font = "20px Arial";
   ctx.textAlign = "left";
-  ctx.fillText(`Tiempo: ${score}s`, 10, 25);
-  ctx.fillText(`Récord: ${highScore}s`, 10, 50);
+  ctx.fillText(`Time: ${score}s`, 10, 25);
+  ctx.fillText(`High Score: ${highScore}s`, 10, 50);
 }
 
 function drawStartScreen() {
@@ -206,7 +206,7 @@ function drawStartScreen() {
   ctx.fillText("Loop Survival", canvas.width / 2, canvas.height / 2 - 20);
   ctx.font = "20px Arial";
   ctx.fillText(
-    "Presiona ESPACIO para comenzar",
+    "Press SPACE to start",
     canvas.width / 2,
     canvas.height / 2 + 20
   );
@@ -216,20 +216,20 @@ function drawGameOverScreen() {
   ctx.fillStyle = "white";
   ctx.font = "30px Arial";
   ctx.textAlign = "center";
-  ctx.fillText("¡Has perdido!", canvas.width / 2, canvas.height / 2 - 50);
+  ctx.fillText("Game Over", canvas.width / 2, canvas.height / 2 - 50);
   ctx.font = "20px Arial";
   ctx.fillText(
-    `Sobreviviste ${score} segundos`,
+    `You survived ${score} seconds`,
     canvas.width / 2,
     canvas.height / 2 - 10
   );
   ctx.fillText(
-    `Récord: ${highScore} segundos`,
+    `High Score: ${highScore} seconds`,
     canvas.width / 2,
     canvas.height / 2 + 20
   );
   ctx.fillText(
-    "Presiona ESPACIO para reiniciar",
+    "Press SPACE to restart",
     canvas.width / 2,
     canvas.height / 2 + 50
   );
@@ -550,3 +550,17 @@ arrows.right.addEventListener(
 ["left", "right"].forEach((dir) => {
   arrows[dir].addEventListener("touchend", () => (touchMovement.dx = 0));
 });
+
+window.addEventListener(
+  "keydown",
+  function (e) {
+    // Solo bloquear si se presionan flechas y estamos jugando
+    if (
+      ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code) &&
+      gameState === "playing"
+    ) {
+      e.preventDefault(); // 🔒 Evita que el navegador haga scroll
+    }
+  },
+  { passive: false }
+);
