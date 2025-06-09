@@ -13,6 +13,7 @@ const explosionSound = new Audio("sounds/explosion.mp3");
 const backgroundMusic = new Audio("sounds/music.mp3");
 backgroundMusic.loop = true;
 backgroundMusic.volume = 0.5; // puedes ajustar el volumen si quieres
+let animationId = null;
 
 // ===================
 // JUGADOR
@@ -187,6 +188,7 @@ function resetGame() {
   score = 0;
   spawnInterval = 2000;
   lastSpawnTime = 0;
+  particles.length = 0;
 }
 
 function createExplosion(x, y, color) {
@@ -235,19 +237,21 @@ function update(timestamp) {
 
   if (gameState === "start") {
     drawStartScreen();
-    return requestAnimationFrame(update);
+    animationId = requestAnimationFrame(update);
+    return;
   }
 
   if (gameState === "gameover") {
     drawGameOverScreen();
-    return requestAnimationFrame(update);
+    animationId = requestAnimationFrame(update);
+    return;
   }
 
   // JUGANDO
   if (startTime === 0) {
-    startTime = Date.now();
+    startTime = timestamp;
   }
-  score = Math.floor((Date.now() - startTime) / 1000);
+  score = Math.floor((timestamp - startTime) / 1000);
   drawScore();
   newPos();
   drawPlayer();
@@ -269,7 +273,7 @@ function update(timestamp) {
   updateParticles();
   drawParticles();
 
-  requestAnimationFrame(update);
+  animationId = requestAnimationFrame(update);
 }
 
 // ===================
@@ -316,28 +320,26 @@ function stopPlayer(e) {
 document.addEventListener("keydown", movePlayer);
 document.addEventListener("keyup", stopPlayer);
 
-requestAnimationFrame(update);
-
 document.addEventListener("keydown", (e) => {
   if (e.code === "Space") {
     if (gameState === "start") {
       gameState = "playing";
       backgroundMusic.currentTime = 0;
       backgroundMusic.play();
-      requestAnimationFrame(update);
+      if (!animationId) animationId = requestAnimationFrame(update);
     } else if (gameState === "gameover") {
+      cancelAnimationFrame(animationId);
+      animationId = null;
       resetGame();
       gameState = "playing";
       backgroundMusic.currentTime = 0;
       backgroundMusic.play();
-      requestAnimationFrame(update);
+      animationId = requestAnimationFrame(update);
     }
   }
   if (e.code === "KeyM") {
-    if (backgroundMusic.paused) {
-      backgroundMusic.play();
-    } else {
-      backgroundMusic.pause();
-    }
+    backgroundMusic.paused ? backgroundMusic.play() : backgroundMusic.pause();
   }
 });
+
+update();
