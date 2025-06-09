@@ -262,7 +262,10 @@ function createPowerUp() {
     size,
     color,
     type,
-    lifetime: 600
+    lifetime: 600, // 10 segundos
+    fading: false,
+    alpha: 1,
+    spawnScale: 1,
   });
 }
 
@@ -277,15 +280,40 @@ function triggerBombExplosion() {
 
 function drawPowerUps() {
   powerUps.forEach((p) => {
+    ctx.save();
+    ctx.globalAlpha = p.alpha !== undefined ? p.alpha : 1;
+
+    const scale = p.spawnScale !== undefined ? p.spawnScale : 1;
+    const centerX = p.x + p.size / 2;
+    const centerY = p.y + p.size / 2;
+
+    ctx.translate(centerX, centerY);
+    ctx.scale(scale, scale);
     ctx.fillStyle = p.color;
-    ctx.fillRect(p.x, p.y, p.size, p.size);
+    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+
+    ctx.restore();
   });
 }
 
 function updatePowerUps() {
   for (let i = powerUps.length - 1; i >= 0; i--) {
-    powerUps[i].lifetime--;
-    if (powerUps[i].lifetime <= 0) {
+    const p = powerUps[i];
+    p.lifetime--;
+
+    if (p.spawnScale < 1) {
+      p.spawnScale += 0.1;
+      if (p.spawnScale > 1) p.spawnScale = 1;
+    }
+
+    if (p.lifetime <= 30) {
+      // últimos 30 frames (~0.5s)
+      p.fading = true;
+      p.alpha = p.lifetime / 30;
+      p.size *= 0.97; // se va achicando
+    }
+
+    if (p.lifetime <= 0) {
       powerUps.splice(i, 1);
     }
   }
