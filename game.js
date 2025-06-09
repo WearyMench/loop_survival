@@ -14,6 +14,7 @@ const backgroundMusic = new Audio("sounds/music.mp3");
 backgroundMusic.loop = true;
 backgroundMusic.volume = 0.5; // puedes ajustar el volumen si quieres
 let animationId = null;
+const powerUps = [];
 
 // ===================
 // JUGADOR
@@ -116,9 +117,21 @@ function checkCollisions() {
       player.x < enemy.x + enemy.size && player.x + player.size > enemy.x;
     const collideY =
       player.y < enemy.y + enemy.size && player.y + player.size > enemy.y;
-    if (collideX && collideY) {
+    if (collideX && collideY && !player.invincible) {
       gameOver();
       break;
+    }
+  }
+  for (let i = powerUps.length - 1; i >= 0; i--) {
+    const p = powerUps[i];
+    const collideX = player.x < p.x + p.size && player.x + player.size > p.x;
+    const collideY = player.y < p.y + p.size && player.y + player.size > p.y;
+
+    if (collideX && collideY && p.type === "invincibility") {
+      powerUps.splice(i, 1);
+      player.invincible = true;
+      player.invincibleTimer = 180; // dura 3 segundos si 60 FPS
+      player.color = "cyan";
     }
   }
 }
@@ -229,6 +242,20 @@ function drawParticles() {
   });
 }
 
+function createPowerUp() {
+  const size = 15;
+  const x = Math.random() * (canvas.width - size);
+  const y = Math.random() * (canvas.height - size);
+  powerUps.push({ x, y, size, color: "yellow", type: "invincibility" });
+}
+
+function drawPowerUps() {
+  powerUps.forEach((p) => {
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x, p.y, p.size, p.size);
+  });
+}
+
 // ===================
 // GAME LOOP
 // ===================
@@ -263,6 +290,14 @@ function update(timestamp) {
 
   updateEnemies();
   drawEnemies();
+  drawPowerUps();
+  if (player.invincible) {
+    player.invincibleTimer--;
+    if (player.invincibleTimer <= 0) {
+      player.invincible = false;
+      player.color = "lime";
+    }
+  }
   checkCollisions();
 
   // Aumentar dificultad progresiva
@@ -272,6 +307,13 @@ function update(timestamp) {
 
   updateParticles();
   drawParticles();
+
+  if (score % 15 === 0 && score !== 0 && !update.lastPowerUpScore) {
+    createPowerUp();
+    update.lastPowerUpScore = score;
+  } else if (score % 15 !== 0) {
+    update.lastPowerUpScore = null;
+  }
 
   animationId = requestAnimationFrame(update);
 }
