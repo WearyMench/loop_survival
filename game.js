@@ -127,11 +127,15 @@ function checkCollisions() {
     const collideX = player.x < p.x + p.size && player.x + player.size > p.x;
     const collideY = player.y < p.y + p.size && player.y + player.size > p.y;
 
-    if (collideX && collideY && p.type === "invincibility") {
+    if (collideX && collideY) {
+      if (p.type === "invincibility") {
+        player.invincible = true;
+        player.invincibleTimer = 180;
+        player.color = "cyan";
+      } else if (p.type === "bomb") {
+        triggerBombExplosion();
+      }
       powerUps.splice(i, 1);
-      player.invincible = true;
-      player.invincibleTimer = 180; // dura 3 segundos si 60 FPS
-      player.color = "cyan";
     }
   }
 }
@@ -202,6 +206,8 @@ function resetGame() {
   spawnInterval = 2000;
   lastSpawnTime = 0;
   particles.length = 0;
+  powerUps.length = [];
+  player.invincible = false;
 }
 
 function createExplosion(x, y, color) {
@@ -246,7 +252,27 @@ function createPowerUp() {
   const size = 15;
   const x = Math.random() * (canvas.width - size);
   const y = Math.random() * (canvas.height - size);
-  powerUps.push({ x, y, size, color: "yellow", type: "invincibility" });
+  const types = ["invincibility", "bomb"];
+  const type = types[Math.floor(Math.random() * types.length)];
+  const color = type === "invincibility" ? "yellow" : "red";
+
+  powerUps.push({
+    x,
+    y,
+    size,
+    color,
+    type,
+    lifetime: 600
+  });
+}
+
+function triggerBombExplosion() {
+  enemies.forEach((enemy) => {
+    createExplosion(enemy.x, enemy.y, "orange");
+  });
+  enemies.length = 0;
+  explosionSound.currentTime = 0;
+  explosionSound.play();
 }
 
 function drawPowerUps() {
@@ -254,6 +280,15 @@ function drawPowerUps() {
     ctx.fillStyle = p.color;
     ctx.fillRect(p.x, p.y, p.size, p.size);
   });
+}
+
+function updatePowerUps() {
+  for (let i = powerUps.length - 1; i >= 0; i--) {
+    powerUps[i].lifetime--;
+    if (powerUps[i].lifetime <= 0) {
+      powerUps.splice(i, 1);
+    }
+  }
 }
 
 // ===================
@@ -290,6 +325,7 @@ function update(timestamp) {
 
   updateEnemies();
   drawEnemies();
+  updatePowerUps();
   drawPowerUps();
   if (player.invincible) {
     player.invincibleTimer--;
