@@ -15,6 +15,8 @@ backgroundMusic.loop = true;
 backgroundMusic.volume = 0.5; // puedes ajustar el volumen si quieres
 let animationId = null;
 const powerUps = [];
+let highScore = localStorage.getItem("loopHighScore") || 0;
+highScore = parseInt(highScore);
 
 // ===================
 // JUGADOR
@@ -148,6 +150,10 @@ function gameOver() {
   backgroundMusic.pause();
   shakeDuration = 20;
   player.color = "black";
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem("loopHighScore", highScore);
+  }
   setTimeout(() => {
     gameState = "gameover";
     drawGameOverScreen();
@@ -159,6 +165,7 @@ function drawScore() {
   ctx.font = "20px Arial";
   ctx.textAlign = "left";
   ctx.fillText(`Tiempo: ${score}s`, 10, 25);
+  ctx.fillText(`Récord: ${highScore}s`, 10, 50);
 }
 
 function drawStartScreen() {
@@ -178,17 +185,22 @@ function drawGameOverScreen() {
   ctx.fillStyle = "white";
   ctx.font = "30px Arial";
   ctx.textAlign = "center";
-  ctx.fillText("¡Has perdido!", canvas.width / 2, canvas.height / 2 - 30);
+  ctx.fillText("¡Has perdido!", canvas.width / 2, canvas.height / 2 - 50);
   ctx.font = "20px Arial";
   ctx.fillText(
     `Sobreviviste ${score} segundos`,
     canvas.width / 2,
-    canvas.height / 2
+    canvas.height / 2 - 10
+  );
+  ctx.fillText(
+    `Récord: ${highScore} segundos`,
+    canvas.width / 2,
+    canvas.height / 2 + 20
   );
   ctx.fillText(
     "Presiona ESPACIO para reiniciar",
     canvas.width / 2,
-    canvas.height / 2 + 30
+    canvas.height / 2 + 50
   );
 }
 
