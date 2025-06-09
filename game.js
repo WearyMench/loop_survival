@@ -1,5 +1,6 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
+const startBtn = document.getElementById("startBtn");
 const restartBtn = document.getElementById("restartBtn");
 let isGameOver = false;
 let startTime = 0;
@@ -131,8 +132,11 @@ function drawPlayer() {
 }
 
 function newPos() {
-  player.x += player.dx;
-  player.y += player.dy;
+  const dx = player.dx + touchMovement.dx;
+  const dy = player.dy + touchMovement.dy;
+
+  player.x += dx;
+  player.y += dy;
 
   player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
   player.y = Math.max(0, Math.min(canvas.height - player.size, player.y));
@@ -180,6 +184,7 @@ function gameOver() {
     localStorage.setItem("loopHighScore", highScore);
   }
   restartBtn.style.display = "block";
+  startBtn.style.display = "none";
   setTimeout(() => {
     gameState = "gameover";
     drawGameOverScreen();
@@ -247,6 +252,7 @@ function resetGame() {
   powerUps.length = [];
   player.invincible = false;
   restartBtn.style.display = "none";
+  startBtn.style.display = "none";
 }
 
 function createExplosion(x, y, color) {
@@ -493,12 +499,54 @@ document.addEventListener("keydown", (e) => {
 
 update();
 
+startBtn.addEventListener("click", () => {
+  if (animationId) cancelAnimationFrame(animationId);
+  gameState = "playing";
+  backgroundMusic.currentTime = 0;
+  backgroundMusic.play();
+  startBtn.style.display = "none";
+  animationId = requestAnimationFrame(update);
+});
+
 restartBtn.addEventListener("click", () => {
-  cancelAnimationFrame(animationId);
-  animationId = null;
+  if (animationId) cancelAnimationFrame(animationId);
   resetGame();
   gameState = "playing";
   backgroundMusic.currentTime = 0;
   backgroundMusic.play();
   animationId = requestAnimationFrame(update);
+});
+
+const arrows = {
+  up: document.querySelector(".arrow.up"),
+  down: document.querySelector(".arrow.down"),
+  left: document.querySelector(".arrow.left"),
+  right: document.querySelector(".arrow.right"),
+};
+
+let touchMovement = { dx: 0, dy: 0 };
+
+// Asociar movimiento con botones táctiles
+arrows.up.addEventListener(
+  "touchstart",
+  () => (touchMovement.dy = -player.speed)
+);
+arrows.down.addEventListener(
+  "touchstart",
+  () => (touchMovement.dy = player.speed)
+);
+arrows.left.addEventListener(
+  "touchstart",
+  () => (touchMovement.dx = -player.speed)
+);
+arrows.right.addEventListener(
+  "touchstart",
+  () => (touchMovement.dx = player.speed)
+);
+
+["up", "down"].forEach((dir) => {
+  arrows[dir].addEventListener("touchend", () => (touchMovement.dy = 0));
+});
+["left", "right"].forEach((dir) => {
+  arrows[dir].addEventListener("touchend", () => (touchMovement.dx = 0));
 });

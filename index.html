@@ -3,14 +3,43 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Loop Survival - A thrilling survival game where you navigate through obstacles and collect items to survive."
+    />
+    <meta
+      name="keywords"
+      content="Loop Survival, survival game, arcade game, HTML5 game"
+    />
+    <meta name="author" content="Adrian_M" />
     <title>Loop Survival</title>
     <link rel="stylesheet" href="style.css" />
+    <link rel="shortcut icon" href="assets/logo.png" type="image/x-icon" />
   </head>
   <body>
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
-    <button id="restartBtn" style="display: none">Reiniciar</button>
+    <div id="gameContainer">
+      <canvas id="gameCanvas" width="800" height="600"></canvas>
+    </div>
+
+    <div id="touchControls">
+      <button class="arrow up">↑</button>
+      <div class="horizontal">
+        <button class="arrow left">←</button>
+        <button class="arrow right">→</button>
+      </div>
+      <button class="arrow down">↓</button>
+    </div>
+
+    <div id="uiButtons">
+      <button id="startBtn">Iniciar</button>
+      <button id="restartBtn" style="display: none">Reiniciar</button>
+    </div>
+
     <script>
-      window.onload = () => {};
+      window.onload = () => {
+        startBtn.style.display = "block";
+        restartBtn.style.display = "none";
+      };
     </script>
     <script src="game.js"></script>
   </body>
