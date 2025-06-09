@@ -11,3 +11,20 @@ canvas {
   border: 2px solid #444;
   background-color: #000;
 }
+
+#restartBtn {
+  position: absolute;
+  top: 65%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 12px 24px;
+  font-size: 18px;
+  background: #222;
+  color: white;
+  border: 2px solid white;
+  cursor: pointer;
+  border-radius: 8px;
+}
+#restartBtn:hover {
+  background: #333;
+}

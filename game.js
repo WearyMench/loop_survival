@@ -1,5 +1,6 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
+const restartBtn = document.getElementById("restartBtn");
 let isGameOver = false;
 let startTime = 0;
 let score = 0;
@@ -17,6 +18,17 @@ let animationId = null;
 const powerUps = [];
 let highScore = localStorage.getItem("loopHighScore") || 0;
 highScore = parseInt(highScore);
+const spriteImages = {
+  player: new Image(),
+  enemy: new Image(),
+  invincibility: new Image(),
+  bomb: new Image(),
+};
+
+spriteImages.player.src = "assets/player.png";
+spriteImages.enemy.src = "assets/enemy.png";
+spriteImages.invincibility.src = "assets/power_invincibility.png";
+spriteImages.bomb.src = "assets/power_bomb.png";
 
 // ===================
 // JUGADOR
@@ -80,8 +92,7 @@ function updateEnemies() {
 
 function drawEnemies() {
   enemies.forEach((enemy) => {
-    ctx.fillStyle = enemy.color;
-    ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
+    ctx.drawImage(spriteImages.enemy, enemy.x, enemy.y, enemy.size, enemy.size);
   });
 }
 
@@ -101,8 +112,22 @@ function clear() {
 }
 
 function drawPlayer() {
-  ctx.fillStyle = player.color;
-  ctx.fillRect(player.x, player.y, player.size, player.size);
+  ctx.save();
+
+  if (player.invincible) {
+    ctx.shadowColor = "cyan";
+    ctx.shadowBlur = 15;
+  }
+
+  ctx.drawImage(
+    spriteImages.player,
+    player.x,
+    player.y,
+    player.size,
+    player.size
+  );
+
+  ctx.restore();
 }
 
 function newPos() {
@@ -154,6 +179,7 @@ function gameOver() {
     highScore = score;
     localStorage.setItem("loopHighScore", highScore);
   }
+  restartBtn.style.display = "block";
   setTimeout(() => {
     gameState = "gameover";
     drawGameOverScreen();
@@ -220,6 +246,7 @@ function resetGame() {
   particles.length = 0;
   powerUps.length = [];
   player.invincible = false;
+  restartBtn.style.display = "none";
 }
 
 function createExplosion(x, y, color) {
@@ -301,9 +328,13 @@ function drawPowerUps() {
 
     ctx.translate(centerX, centerY);
     ctx.scale(scale, scale);
-    ctx.fillStyle = p.color;
-    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
 
+    const img =
+      p.type === "invincibility"
+        ? spriteImages.invincibility
+        : spriteImages.bomb;
+
+    ctx.drawImage(img, -p.size / 2, -p.size / 2, p.size, p.size);
     ctx.restore();
   });
 }
@@ -461,3 +492,13 @@ document.addEventListener("keydown", (e) => {
 });
 
 update();
+
+restartBtn.addEventListener("click", () => {
+  cancelAnimationFrame(animationId);
+  animationId = null;
+  resetGame();
+  gameState = "playing";
+  backgroundMusic.currentTime = 0;
+  backgroundMusic.play();
+  animationId = requestAnimationFrame(update);
+});
