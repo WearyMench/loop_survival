@@ -551,6 +551,12 @@ arrows.right.addEventListener(
   arrows[dir].addEventListener("touchend", () => (touchMovement.dx = 0));
 });
 
+Object.values(arrows).forEach((btn) => {
+  btn.addEventListener("contextmenu", (e) => e.preventDefault());
+  btn.addEventListener("selectstart", (e) => e.preventDefault());
+  btn.addEventListener("gesturestart", (e) => e.preventDefault());
+});
+
 window.addEventListener(
   "keydown",
   function (e) {

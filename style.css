@@ -76,6 +76,11 @@ canvas {
   background-color: #444;
   color: white;
   opacity: 0.8;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 #touchControls .arrow:hover {
