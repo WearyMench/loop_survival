@@ -570,16 +570,3 @@ window.addEventListener(
   },
   { passive: false }
 );
-
-const fullscreenBtn = document.getElementById("fullscreenBtn");
-
-fullscreenBtn.addEventListener("click", () => {
-  const elem = document.getElementById("gameContainer");
-  if (document.fullscreenElement) {
-    document.exitFullscreen();
-  } else {
-    elem.requestFullscreen().catch((err) => {
-      alert(`No se pudo activar el modo pantalla completa: ${err.message}`);
-    });
-  }
-});

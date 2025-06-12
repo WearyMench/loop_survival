@@ -49,30 +49,6 @@ canvas {
   background: #333;
 }
 
-#fullscreenBtn {
-  position: absolute;
-  top: 80%;
-  left: 70%;
-  transform: translate(-50%, -50%);
-  width: 40px;
-  height: 40px;
-  background: #11111171;
-  color: white;
-  font-size: 18px;
-  border: 1.5px solid white;
-  border-radius: 50%;
-  cursor: pointer;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-#fullscreenBtn:hover {
-  background: #222;
-}
-
 #touchControls {
   position: absolute;
   left: 50%;
@@ -124,8 +100,5 @@ canvas {
   #uiButtons button {
     padding: 8px 16px;
     font-size: 12px;
-  }
-  #fullscreenBtn {
-    display: none;
   }
 }
