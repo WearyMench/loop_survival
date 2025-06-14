@@ -31,22 +31,78 @@ canvas {
   transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 15px;
   z-index: 10;
 }
 
 #uiButtons button {
-  padding: 12px 24px;
-  font-size: 20px;
-  background: #222;
+  padding: 15px 30px;
+  font-size: 24px;
+  font-weight: bold;
+  background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
   color: white;
-  border: 2px solid white;
-  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
   cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+#uiButtons button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: 0.5s;
 }
 
 #uiButtons button:hover {
-  background: #333;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.5);
+  background: linear-gradient(145deg, #333333, #222222);
+}
+
+#uiButtons button:hover::before {
+  left: 100%;
+}
+
+#uiButtons button:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+#startBtn {
+  background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+  animation: pulse 2s infinite;
+}
+
+#restartBtn {
+  background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 4px 25px rgba(255, 255, 255, 0.2);
+  }
+  100% {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  }
 }
 
 #touchControls {
@@ -54,37 +110,35 @@ canvas {
   left: 50%;
   bottom: 40px;
   transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
   z-index: 10;
 }
 
-#touchControls .horizontal {
-  display: flex;
-  gap: 60px;
-  justify-content: center;
+#joystick {
+  width: 120px;
+  height: 120px;
+  position: relative;
 }
 
-#touchControls .arrow {
+#joystick-base {
+  width: 100%;
+  height: 100%;
+  background-color: rgba(68, 68, 68, 0.5);
+  border-radius: 50%;
+  position: relative;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+#joystick-thumb {
   width: 50px;
   height: 50px;
-  font-size: 24px;
-  border: none;
-  border-radius: 8px;
-  background-color: #444;
-  color: white;
-  opacity: 0.8;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-#touchControls .arrow:hover {
-  opacity: 1;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  touch-action: none;
 }
 
 @media (min-width: 768px) {
@@ -98,7 +152,7 @@ canvas {
     top: 58%;
   }
   #uiButtons button {
-    padding: 8px 16px;
-    font-size: 12px;
+    padding: 12px 24px;
+    font-size: 18px;
   }
 }

@@ -13,6 +13,8 @@ let shakeDuration = 0;
 let shakeMagnitude = 5;
 const explosionSound = new Audio("sounds/explosion.mp3");
 const backgroundMusic = new Audio("sounds/music.mp3");
+const enemySpawnSound = new Audio("sounds/enemy_spawn.mp3");
+const powerupSound = new Audio("sounds/powerup.mp3");
 backgroundMusic.loop = true;
 backgroundMusic.volume = 0.5; // puedes ajustar el volumen si quieres
 let animationId = null;
@@ -24,12 +26,14 @@ const spriteImages = {
   enemy: new Image(),
   invincibility: new Image(),
   bomb: new Image(),
+  background: new Image(),
 };
 
-spriteImages.player.src = "assets/player.png";
+spriteImages.player.src = "assets/player3.png";
 spriteImages.enemy.src = "assets/enemy.png";
 spriteImages.invincibility.src = "assets/power_invincibility.png";
 spriteImages.bomb.src = "assets/power_bomb.png";
+spriteImages.background.src = "assets/background.png";
 
 // ===================
 // JUGADOR
@@ -55,28 +59,33 @@ function createEnemy() {
   const size = 20;
   let x, y;
 
-  const edge = Math.floor(Math.random() * 4);
-  switch (edge) {
-    case 0: // arriba
+  // Randomly choose spawn position from edges
+  const side = Math.floor(Math.random() * 4);
+  switch (side) {
+    case 0: // top
       x = Math.random() * canvas.width;
       y = -size;
       break;
-    case 1: // abajo
-      x = Math.random() * canvas.width;
-      y = canvas.height + size;
-      break;
-    case 2: // izquierda
-      x = -size;
+    case 1: // right
+      x = canvas.width;
       y = Math.random() * canvas.height;
       break;
-    case 3: // derecha
-      x = canvas.width + size;
+    case 2: // bottom
+      x = Math.random() * canvas.width;
+      y = canvas.height;
+      break;
+    case 3: // left
+      x = -size;
       y = Math.random() * canvas.height;
       break;
   }
 
-  const baseSpeed = BASE_ENEMY_SPEED + score * 0.05;
-  enemies.push({ x, y, size, speed: baseSpeed, color: "red" });
+  const speed = BASE_ENEMY_SPEED + Math.random() * 0.5;
+  enemies.push({ x, y, size, speed });
+
+  // Play spawn sound
+  enemySpawnSound.currentTime = 0;
+  enemySpawnSound.play();
 }
 
 function updateEnemies() {
@@ -109,17 +118,49 @@ function clear() {
   } else {
     ctx.setTransform(1, 0, 0, 1, 0, 0); // reset transform
   }
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw background
+  ctx.drawImage(spriteImages.background, 0, 0, canvas.width, canvas.height);
+}
+
+// Directions: 0=down, 1=left, 2=right, 3=up
+let playerAnim = {
+  frame: 0,
+  direction: 0, // 0=down, 1=left, 2=right, 3=up
+  timer: 0,
+  lastMoveX: 0,
+  lastMoveY: 1, // Default facing down
+};
+
+function updatePlayerAnim(dx, dy) {
+  // Determine direction
+  if (dx !== 0 || dy !== 0) {
+    if (Math.abs(dx) > Math.abs(dy)) {
+      playerAnim.direction = dx > 0 ? 2 : 1; // right : left
+    } else {
+      playerAnim.direction = dy > 0 ? 0 : 3; // down : up
+    }
+    playerAnim.lastMoveX = dx;
+    playerAnim.lastMoveY = dy;
+    // Advance frame
+    playerAnim.timer += PLAYER_ANIM_SPEED;
+    if (playerAnim.timer >= 1) {
+      playerAnim.frame = (playerAnim.frame + 1) % PLAYER_ANIM_FRAMES;
+      playerAnim.timer = 0;
+    }
+  } else {
+    // Idle: show first frame
+    playerAnim.frame = 0;
+    playerAnim.timer = 0;
+  }
 }
 
 function drawPlayer() {
   ctx.save();
-
   if (player.invincible) {
     ctx.shadowColor = "cyan";
     ctx.shadowBlur = 15;
   }
-
   ctx.drawImage(
     spriteImages.player,
     player.x,
@@ -127,17 +168,14 @@ function drawPlayer() {
     player.size,
     player.size
   );
-
   ctx.restore();
 }
 
 function newPos() {
   const dx = player.dx + touchMovement.dx;
   const dy = player.dy + touchMovement.dy;
-
   player.x += dx;
   player.y += dy;
-
   player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
   player.y = Math.max(0, Math.min(canvas.height - player.size, player.y));
 }
@@ -171,6 +209,163 @@ function checkCollisions() {
   }
 }
 
+// Add these variables at the top with other game variables
+let titleAnimation = 0;
+let buttonPulse = 0;
+let gameOverParticles = [];
+
+function drawStartScreen() {
+  // Draw background grid
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+  ctx.lineWidth = 1;
+  const gridSize = 40;
+
+  for (let x = 0; x < canvas.width; x += gridSize) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, canvas.height);
+    ctx.stroke();
+  }
+
+  for (let y = 0; y < canvas.height; y += gridSize) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.stroke();
+  }
+
+  // Animate title
+  titleAnimation += 0.05;
+  const titleY = canvas.height / 2 - 60 + Math.sin(titleAnimation) * 5;
+
+  // Draw title with glow effect
+  ctx.shadowColor = "rgba(0, 255, 255, 0.8)";
+  ctx.shadowBlur = 20;
+  ctx.fillStyle = "white";
+  ctx.font = "bold 48px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("LOOP SURVIVAL", canvas.width / 2, titleY);
+
+  // Reset shadow
+  ctx.shadowBlur = 0;
+
+  // Draw subtitle
+  ctx.font = "20px Arial";
+  ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+  ctx.fillText("Survive as long as you can!", canvas.width / 2, titleY + 40);
+
+  // Draw controls info
+  ctx.font = "16px Arial";
+  ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+  ctx.fillText(
+    "PC: Use ARROW KEYS or WASD to move",
+    canvas.width / 2,
+    canvas.height - 100
+  );
+  ctx.fillText(
+    "Mobile: Use the joystick to move",
+    canvas.width / 2,
+    canvas.height - 80
+  );
+  ctx.fillText(
+    "Press SPACE or click START to begin",
+    canvas.width / 2,
+    canvas.height - 60
+  );
+
+  // Draw power-up info
+  ctx.fillStyle = "rgba(255, 255, 0, 0.8)";
+  ctx.fillText("★", canvas.width / 2 - 100, canvas.height - 120);
+  ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+  ctx.fillText(
+    "Collect power-ups to survive longer!",
+    canvas.width / 2 - 80,
+    canvas.height - 120
+  );
+}
+
+function drawGameOverScreen() {
+  // Draw dark overlay
+  ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Draw game over text with glow
+  ctx.shadowColor = "rgba(255, 0, 0, 0.8)";
+  ctx.shadowBlur = 20;
+  ctx.fillStyle = "white";
+  ctx.font = "bold 48px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 80);
+
+  // Reset shadow
+  ctx.shadowBlur = 0;
+
+  // Draw score with animation
+  const scoreY = canvas.height / 2 - 20;
+  ctx.font = "bold 32px Arial";
+  ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+  ctx.fillText(`Time Survived: ${score}s`, canvas.width / 2, scoreY);
+
+  // Draw high score
+  ctx.font = "24px Arial";
+  ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+  ctx.fillText(`High Score: ${highScore}s`, canvas.width / 2, scoreY + 40);
+
+  // Draw restart instruction with pulse effect
+  buttonPulse += 0.1;
+  const pulseOpacity = 0.5 + Math.sin(buttonPulse) * 0.3;
+  ctx.font = "20px Arial";
+  ctx.fillStyle = `rgba(255, 255, 255, ${pulseOpacity})`;
+  ctx.fillText(
+    "Press SPACE or click RESTART to play again",
+    canvas.width / 2,
+    scoreY + 100
+  );
+
+  // Draw particles
+  updateGameOverParticles();
+  drawGameOverParticles();
+}
+
+function createGameOverParticles() {
+  for (let i = 0; i < 50; i++) {
+    gameOverParticles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      size: Math.random() * 3 + 1,
+      speedX: (Math.random() - 0.5) * 2,
+      speedY: (Math.random() - 0.5) * 2,
+      color: `rgba(255, ${Math.random() * 100}, ${Math.random() * 100}, 0.5)`,
+    });
+  }
+}
+
+function updateGameOverParticles() {
+  if (gameOverParticles.length === 0) {
+    createGameOverParticles();
+  }
+
+  gameOverParticles.forEach((particle) => {
+    particle.x += particle.speedX;
+    particle.y += particle.speedY;
+
+    // Wrap around screen
+    if (particle.x < 0) particle.x = canvas.width;
+    if (particle.x > canvas.width) particle.x = 0;
+    if (particle.y < 0) particle.y = canvas.height;
+    if (particle.y > canvas.height) particle.y = 0;
+  });
+}
+
+function drawGameOverParticles() {
+  gameOverParticles.forEach((particle) => {
+    ctx.fillStyle = particle.color;
+    ctx.beginPath();
+    ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
 function gameOver() {
   isGameOver = true;
   createExplosion(player.x, player.y, player.color);
@@ -185,6 +380,7 @@ function gameOver() {
   }
   restartBtn.style.display = "block";
   startBtn.style.display = "none";
+  gameOverParticles = []; // Reset particles
   setTimeout(() => {
     gameState = "gameover";
     drawGameOverScreen();
@@ -192,47 +388,54 @@ function gameOver() {
 }
 
 function drawScore() {
-  ctx.fillStyle = "white";
-  ctx.font = "20px Arial";
+  // Draw subtle background for main stats
+  ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+  ctx.fillRect(10, 10, 180, 80);
+
+  // Draw time and high score
+  ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+  ctx.font = "bold 20px Arial";
   ctx.textAlign = "left";
-  ctx.fillText(`Time: ${score}s`, 10, 25);
-  ctx.fillText(`High Score: ${highScore}s`, 10, 50);
-}
+  ctx.fillText(`⏱️ ${score}s`, 20, 35);
+  ctx.fillText(`🏆 ${highScore}s`, 20, 65);
 
-function drawStartScreen() {
-  ctx.fillStyle = "white";
-  ctx.font = "30px Arial";
-  ctx.textAlign = "center";
-  ctx.fillText("Loop Survival", canvas.width / 2, canvas.height / 2 - 20);
-  ctx.font = "20px Arial";
-  ctx.fillText(
-    "Press SPACE to start",
-    canvas.width / 2,
-    canvas.height / 2 + 20
-  );
-}
+  // Draw difficulty level
+  const difficulty = Math.max(1, Math.floor((2000 - spawnInterval) / 100));
+  ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+  ctx.font = "16px Arial";
+  ctx.fillText(`Level ${difficulty}`, 20, 95);
 
-function drawGameOverScreen() {
-  ctx.fillStyle = "white";
-  ctx.font = "30px Arial";
-  ctx.textAlign = "center";
-  ctx.fillText("Game Over", canvas.width / 2, canvas.height / 2 - 50);
-  ctx.font = "20px Arial";
-  ctx.fillText(
-    `You survived ${score} seconds`,
-    canvas.width / 2,
-    canvas.height / 2 - 10
-  );
-  ctx.fillText(
-    `High Score: ${highScore} seconds`,
-    canvas.width / 2,
-    canvas.height / 2 + 20
-  );
-  ctx.fillText(
-    "Press SPACE to restart",
-    canvas.width / 2,
-    canvas.height / 2 + 50
-  );
+  // Draw power-up status if active
+  if (player.invincible) {
+    // Draw invincibility timer bar
+    const barWidth = 150;
+    const barHeight = 6;
+    const barX = canvas.width / 2 - barWidth / 2;
+    const barY = 20;
+
+    // Background
+    ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+    ctx.fillRect(barX, barY, barWidth, barHeight);
+
+    // Progress
+    const progress = player.invincibleTimer / 180;
+    ctx.fillStyle = "rgba(0, 255, 255, 0.6)";
+    ctx.fillRect(barX, barY, barWidth * progress, barHeight);
+
+    // Text
+    ctx.fillStyle = "rgba(0, 255, 255, 0.8)";
+    ctx.font = "16px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("INVINCIBLE", canvas.width / 2, barY - 5);
+  }
+
+  // Draw controls reminder for mobile
+  if (window.innerWidth <= 768) {
+    ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+    ctx.font = "14px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("Use joystick to move", canvas.width / 2, canvas.height - 20);
+  }
 }
 
 function resetGame() {
@@ -253,6 +456,9 @@ function resetGame() {
   player.invincible = false;
   restartBtn.style.display = "none";
   startBtn.style.display = "none";
+  gameOverParticles = [];
+  buttonPulse = 0;
+  titleAnimation = 0;
 }
 
 function createExplosion(x, y, color) {
@@ -307,11 +513,15 @@ function createPowerUp() {
     size,
     color,
     type,
-    lifetime: 600, // 10 segundos
+    lifetime: 600, // 10 seconds
     fading: false,
     alpha: 1,
-    spawnScale: 1,
+    spawnScale: 0.1, // Start small for spawn animation
   });
+
+  // Play powerup spawn sound
+  powerupSound.currentTime = 0;
+  powerupSound.play();
 }
 
 function triggerBombExplosion() {
@@ -517,56 +727,92 @@ restartBtn.addEventListener("click", () => {
   animationId = requestAnimationFrame(update);
 });
 
-const arrows = {
-  up: document.querySelector(".arrow.up"),
-  down: document.querySelector(".arrow.down"),
-  left: document.querySelector(".arrow.left"),
-  right: document.querySelector(".arrow.right"),
-};
+const touchMovement = { dx: 0, dy: 0 };
+let isJoystickActive = false;
+let joystickBase = document.getElementById("joystick-base");
+let joystickThumb = document.getElementById("joystick-thumb");
+let joystickCenter = { x: 0, y: 0 };
+let joystickRadius = 0;
 
-let touchMovement = { dx: 0, dy: 0 };
+// Initialize joystick
+function initJoystick() {
+  const rect = joystickBase.getBoundingClientRect();
+  joystickCenter = {
+    x: rect.left + rect.width / 2,
+    y: rect.top + rect.height / 2,
+  };
+  joystickRadius = rect.width / 2;
+}
 
-// Asociar movimiento con botones táctiles
-arrows.up.addEventListener(
-  "touchstart",
-  () => (touchMovement.dy = -player.speed)
-);
-arrows.down.addEventListener(
-  "touchstart",
-  () => (touchMovement.dy = player.speed)
-);
-arrows.left.addEventListener(
-  "touchstart",
-  () => (touchMovement.dx = -player.speed)
-);
-arrows.right.addEventListener(
-  "touchstart",
-  () => (touchMovement.dx = player.speed)
-);
+// Handle joystick touch events
+function handleJoystickTouch(e) {
+  if (gameState !== "playing") return;
 
-["up", "down"].forEach((dir) => {
-  arrows[dir].addEventListener("touchend", () => (touchMovement.dy = 0));
+  const touch = e.touches[0];
+  const touchX = touch.clientX;
+  const touchY = touch.clientY;
+
+  // Calculate distance and angle from center
+  const dx = touchX - joystickCenter.x;
+  const dy = touchY - joystickCenter.y;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+
+  // Normalize and limit to joystick radius
+  const normalizedDistance = Math.min(distance, joystickRadius);
+  const angle = Math.atan2(dy, dx);
+
+  // Calculate normalized movement
+  const normalizedX = (normalizedDistance * Math.cos(angle)) / joystickRadius;
+  const normalizedY = (normalizedDistance * Math.sin(angle)) / joystickRadius;
+
+  // Update thumb position
+  const thumbX = normalizedX * joystickRadius;
+  const thumbY = normalizedY * joystickRadius;
+  joystickThumb.style.transform = `translate(calc(-50% + ${thumbX}px), calc(-50% + ${thumbY}px))`;
+
+  // Update player movement
+  touchMovement.dx = normalizedX * player.speed;
+  touchMovement.dy = normalizedY * player.speed;
+}
+
+function handleJoystickRelease() {
+  if (gameState !== "playing") return;
+
+  // Reset thumb position
+  joystickThumb.style.transform = "translate(-50%, -50%)";
+
+  // Reset movement
+  touchMovement.dx = 0;
+  touchMovement.dy = 0;
+}
+
+// Add joystick event listeners
+joystickThumb.addEventListener("touchstart", (e) => {
+  e.preventDefault();
+  isJoystickActive = true;
+  handleJoystickTouch(e);
 });
-["left", "right"].forEach((dir) => {
-  arrows[dir].addEventListener("touchend", () => (touchMovement.dx = 0));
+
+document.addEventListener("touchmove", (e) => {
+  if (isJoystickActive) {
+    e.preventDefault();
+    handleJoystickTouch(e);
+  }
 });
 
-Object.values(arrows).forEach((btn) => {
-  btn.addEventListener("contextmenu", (e) => e.preventDefault());
-  btn.addEventListener("selectstart", (e) => e.preventDefault());
-  btn.addEventListener("gesturestart", (e) => e.preventDefault());
+document.addEventListener("touchend", () => {
+  if (isJoystickActive) {
+    isJoystickActive = false;
+    handleJoystickRelease();
+  }
 });
 
-window.addEventListener(
-  "keydown",
-  function (e) {
-    // Solo bloquear si se presionan flechas y estamos jugando
-    if (
-      ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code) &&
-      gameState === "playing"
-    ) {
-      e.preventDefault(); // 🔒 Evita que el navegador haga scroll
-    }
-  },
-  { passive: false }
-);
+// Initialize joystick on window load
+window.addEventListener("load", initJoystick);
+window.addEventListener("resize", initJoystick);
+
+// Configure sounds
+backgroundMusic.loop = true;
+backgroundMusic.volume = 0.5;
+enemySpawnSound.volume = 0.15; // Lowered from 0.3
+powerupSound.volume = 0.4;
