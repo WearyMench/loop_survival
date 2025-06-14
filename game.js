@@ -459,6 +459,14 @@ function resetGame() {
   gameOverParticles = [];
   buttonPulse = 0;
   titleAnimation = 0;
+
+  // Reset joystick position and touch movement
+  if (joystickThumb) {
+    joystickThumb.style.transform = "translate(-50%, -50%)";
+  }
+  touchMovement.dx = 0;
+  touchMovement.dy = 0;
+  isJoystickActive = false;
 }
 
 function createExplosion(x, y, color) {
@@ -645,6 +653,22 @@ function update(timestamp) {
 // CONTROLES
 // ===================
 function movePlayer(e) {
+  // Prevent default behavior for arrow keys and WASD
+  if (
+    [
+      "ArrowUp",
+      "ArrowDown",
+      "ArrowLeft",
+      "ArrowRight",
+      "w",
+      "a",
+      "s",
+      "d",
+    ].includes(e.key)
+  ) {
+    e.preventDefault();
+  }
+
   switch (e.key) {
     case "ArrowUp":
     case "w":
